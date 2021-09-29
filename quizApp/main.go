@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type problem struct {
@@ -22,19 +23,11 @@ func parseLines(someSlice [][]string) []problem {
 	for i, value := range someSlice {
 		returnedSlices[i] = problem{
 			question: value[0],
-			answer:   value[1],
+			answer:   strings.TrimSpace(value[1]),
 		}
 	}
-
 	return returnedSlices
 }
-
-// [
-// 	{question: 1, answer: 2},
-// 	{question: 1, answer: 2},
-// 	{question: 1, answer: 2},
-// 	{question: 1, answer: 2},
-// ]
 
 func main() {
 	var csvFileName *string = flag.String("csv", "problems.csv", "a csv file in the format question,answer")
@@ -50,4 +43,19 @@ func main() {
 	var readFile *csv.Reader = csv.NewReader(file)
 	parsedCsvFile, err := readFile.ReadAll()
 
+	if err != nil {
+		exitWithMessage("Failed to parse the provided CSV")
+	}
+
+	var quiz []problem = parseLines(parsedCsvFile)
+	var countScore uint16 = 0
+	for index, value := range quiz {
+		fmt.Printf("Question #%d: %s = ", index+1, value.question)
+		var answer string
+		fmt.Scanf("%s\n", &answer)
+		if answer == value.answer {
+			countScore++
+		}
+	}
+	fmt.Printf("\nYou score is %d out of %d", countScore, len(quiz))
 }
