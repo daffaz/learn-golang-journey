@@ -9,61 +9,61 @@ import (
 	"time"
 )
 
-type problem struct {
+type Problem struct {
 	question string
 	answer   string
 }
 
-func exitWithMessage(message string) {
+func exitHelper(message string) {
 	fmt.Println(message)
 	os.Exit(1)
 }
 
-func parseLines(someSlice [][]string) []problem {
-	var returnedSlices []problem = make([]problem, len(someSlice))
-	for i, value := range someSlice {
-		returnedSlices[i] = problem{
+func parseToProblemStruct(theSlice [][]string) []Problem {
+	var returnedProblem []Problem = make([]Problem, len(theSlice))
+	for index, value := range theSlice {
+		returnedProblem[index] = Problem{
 			question: value[0],
 			answer:   strings.TrimSpace(value[1]),
 		}
 	}
-	return returnedSlices
+	return returnedProblem
 }
 
 func main() {
-	var csvFileName *string = flag.String("csv", "problems.csv", "a csv file in the format question,answer")
-	var timeLimit *int = flag.Int("limit", 30, "the time limit for the quiz in second")
+	var csvFlag *string = flag.String("csv", "problems.csv", "a csv formatted file filled with 'question, answer' format")
+	var limitFlag *int = flag.Int("limit", 30, "insert your limit time for the quiz in seconds, the default value is 30s")
+
 	flag.Parse()
-
-	var file, err = os.Open(*csvFileName)
-
-	// If failed to open CSV file
+	var readCsvFile, err = os.Open(*csvFlag)
 	if err != nil {
-		exitWithMessage(fmt.Sprintf("Failed to open CSV file: %s", *csvFileName))
+		exitHelper(fmt.Sprintf("Failed to open csv file: %s", *csvFlag))
 	}
 
-	var readFile *csv.Reader = csv.NewReader(file)
-	parsedCsvFile, err := readFile.ReadAll()
+	var streamFile *csv.Reader = csv.NewReader(readCsvFile)
+	problemsInSlice, err := streamFile.ReadAll()
 
 	if err != nil {
-		exitWithMessage("Failed to parse the provided CSV")
+		exitHelper("Failed to parse the provided CSV")
 	}
 
-	var quiz []problem = parseLines(parsedCsvFile)
-	var timer = time.NewTimer(time.Duration(*timeLimit) * time.Second)
+	var parseProblem []Problem = parseToProblemStruct(problemsInSlice)
+	var timer = time.NewTimer(time.Duration(*limitFlag) * time.Second)
 
-	var countScore uint16 = 0
-	for index, value := range quiz {
+	var countScore int = 0
+	for index, value := range parseProblem {
 		fmt.Printf("Question #%d: %s = ", index+1, value.question)
 		var answerChan chan string = make(chan string)
+
 		go func() {
 			var answer string
 			fmt.Scanf("%s\n", &answer)
 			answerChan <- answer
 		}()
+
 		select {
 		case <-timer.C:
-			fmt.Printf("\nYou score is %d out of %d", countScore, len(quiz))
+			fmt.Printf("\nYou score %d out of %d question", countScore, len(parseProblem))
 			return
 		case answer := <-answerChan:
 			if answer == value.answer {
@@ -71,5 +71,5 @@ func main() {
 			}
 		}
 	}
-	fmt.Printf("\nYou score is %d out of %d", countScore, len(quiz))
+	fmt.Printf("\nYou score %d out of %d question", countScore, len(parseProblem))
 }
