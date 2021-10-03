@@ -2,7 +2,6 @@ package main
 
 import (
 	"cerita"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -18,12 +17,11 @@ func main() {
 		panic(err)
 	}
 
-	fileInJson := json.NewDecoder(fileStream)
-	var cerita cerita.Story
+	fileInJson, err := cerita.StreamToJson(fileStream)
 
-	if err = fileInJson.Decode(&cerita); err != nil {
+	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("%+v", cerita)
+	fmt.Printf("%+v", fileInJson)
 }
