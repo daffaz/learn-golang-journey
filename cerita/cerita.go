@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 )
 
 var tmplt *template.Template
@@ -46,10 +47,23 @@ func NewHandler(s Story) http.Handler {
 }
 
 func (h handlr) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	err := tmplt.Execute(w, h.s["intro"])
-	if err != nil {
-		log.Println(err)
+	path := strings.TrimSpace(r.URL.Path)
+
+	if path == "" || path == "/" {
+		path = "/intro"
 	}
+
+	path = path[1:]
+
+	if chapter, ok := h.s[path]; ok {
+		err := tmplt.Execute(w, chapter)
+		if err != nil {
+			log.Printf("%+v", err)
+			http.Error(w, "Something went wrong...", http.StatusInternalServerError)
+		}
+		return
+	}
+	http.Error(w, "Chapter not found.", http.StatusNotFound)
 }
 
 var HTMLTemplate = `
